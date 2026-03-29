@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the SuperLive platform.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique ID of the user." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "photoURL": { "type": "string", "description": "URL to the user's profile picture." },
+        "bio": { "type": "string", "description": "Short biography of the user." },
+        "coins": { "type": "number", "description": "Virtual currency balance." },
+        "isLive": { "type": "boolean", "description": "Whether the user is currently streaming." }
+      },
+      "required": ["uid", "displayName", "coins"]
+    },
+    "Stream": {
+      "title": "Stream",
+      "description": "A live stream session.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique ID of the stream." },
+        "creatorId": { "type": "string", "description": "UID of the user who created the stream." },
+        "creatorName": { "type": "string", "description": "Display name of the creator." },
+        "creatorPhoto": { "type": "string", "description": "Profile picture of the creator." },
+        "title": { "type": "string", "description": "Title of the stream." },
+        "viewersCount": { "type": "number", "description": "Number of current viewers." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the stream started." },
+        "status": { "type": "string", "enum": ["live", "ended"], "description": "Current status of the stream." }
+      },
+      "required": ["id", "creatorId", "title", "status"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A chat message or gift notification in a stream.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique ID of the message." },
+        "streamId": { "type": "string", "description": "ID of the stream this message belongs to." },
+        "senderId": { "type": "string", "description": "UID of the sender." },
+        "senderName": { "type": "string", "description": "Display name of the sender." },
+        "text": { "type": "string", "description": "Content of the message." },
+        "type": { "type": "string", "enum": ["text", "gift"], "description": "Type of message." },
+        "giftName": { "type": "string", "description": "Name of the gift sent (if type is gift)." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the message was sent." }
+      },
+      "required": ["id", "streamId", "senderId", "type", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data."
+    },
+    "/streams/{streamId}": {
+      "schema": "Stream",
+      "description": "Stream session data."
+    },
+    "/streams/{streamId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Chat messages for a specific stream."
+    }
+  }
+}

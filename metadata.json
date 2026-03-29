@@ -1,0 +1,5 @@
+{
+  "name": "SuperLive ES",
+  "description": "Una plataforma de streaming en vivo con chat y regalos virtuales.",
+  "requestFramePermissions": ["camera", "microphone"]
+}
