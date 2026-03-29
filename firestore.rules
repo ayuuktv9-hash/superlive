@@ -14,7 +14,16 @@ service cloud.firestore {
     //   - photoURL: string (optional, URL)
     //   - bio: string (optional, 0-200 chars)
     //   - coins: number (required, positive)
+    //   - followersCount: number (required, positive)
+    //   - followingCount: number (required, positive)
     //   - isLive: boolean (required)
+    //
+    // Collection: follows
+    // Document ID: followerId_followingId
+    // Fields:
+    //   - followerId: string (required, immutable)
+    //   - followingId: string (required, immutable)
+    //   - createdAt: timestamp (required, immutable)
     //
     // Collection: streams
     // Document ID: streamId
@@ -39,6 +48,24 @@ service cloud.firestore {
     //   - type: string (required, enum: ['text', 'gift'])
     //   - giftName: string (optional)
     //   - createdAt: timestamp (required, immutable)
+    //
+    // Collection: streams/{streamId}/hearts
+    // Document ID: heartId
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - createdAt: timestamp (required, immutable)
+    //
+    // Collection: reports
+    // Document ID: reportId
+    // Fields:
+    //   - streamId: string (required)
+    //   - streamTitle: string (required)
+    //   - reporterId: string (required)
+    //   - reporterName: string (required)
+    //   - creatorId: string (required)
+    //   - creatorName: string (required)
+    //   - createdAt: timestamp (required)
+    //   - status: string (required, enum: ['pending', 'reviewed'])
     //
     // ===============================================================
 
@@ -81,14 +108,24 @@ service cloud.firestore {
     // ===============================================================
 
     function isValidUser(data) {
-      return hasRequiredFields(['uid', 'displayName', 'coins', 'isLive']) &&
-             hasOnlyAllowedFields(['uid', 'displayName', 'photoURL', 'bio', 'coins', 'isLive', 'role']) &&
+      return hasRequiredFields(['uid', 'displayName', 'coins', 'followersCount', 'followingCount', 'isLive']) &&
+             hasOnlyAllowedFields(['uid', 'displayName', 'photoURL', 'bio', 'coins', 'followersCount', 'followingCount', 'isLive', 'role']) &&
              data.uid is string && data.uid == request.auth.uid &&
              data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 50 &&
              (!('photoURL' in data) || isValidUrl(data.photoURL)) &&
              (!('bio' in data) || (data.bio is string && data.bio.size() <= 200)) &&
              data.coins is number && data.coins >= 0 &&
+             data.followersCount is number && data.followersCount >= 0 &&
+             data.followingCount is number && data.followingCount >= 0 &&
              data.isLive is bool;
+    }
+
+    function isValidFollow(data) {
+      return hasRequiredFields(['followerId', 'followingId', 'createdAt']) &&
+             hasOnlyAllowedFields(['followerId', 'followingId', 'createdAt']) &&
+             data.followerId is string && data.followerId == request.auth.uid &&
+             data.followingId is string &&
+             data.createdAt is timestamp;
     }
 
     function isValidStream(data) {
@@ -115,6 +152,21 @@ service cloud.firestore {
              data.createdAt is timestamp;
     }
 
+    function isValidHeart(data) {
+      return hasRequiredFields(['userId', 'createdAt']) &&
+             hasOnlyAllowedFields(['userId', 'createdAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidReport(data) {
+      return hasRequiredFields(['streamId', 'streamTitle', 'reporterId', 'reporterName', 'creatorId', 'creatorName', 'createdAt', 'status']) &&
+             hasOnlyAllowedFields(['streamId', 'streamTitle', 'reporterId', 'reporterName', 'creatorId', 'creatorName', 'createdAt', 'status']) &&
+             data.reporterId is string && data.reporterId == request.auth.uid &&
+             data.status in ['pending', 'reviewed'] &&
+             data.createdAt is timestamp;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -122,7 +174,15 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isOwner(userId) && isValidUser(request.resource.data) && (!('role' in request.resource.data) || request.resource.data.role == 'user');
-      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role) || isAdmin();
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role) || 
+                       (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followersCount', 'followingCount'])) ||
+                       isAdmin();
+    }
+
+    match /follows/{followId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidFollow(request.resource.data);
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.followerId || isAdmin());
     }
 
     match /streams/{streamId} {
@@ -139,6 +199,16 @@ service cloud.firestore {
         allow create: if isAuthenticated() && isValidMessage(request.resource.data);
         allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.senderId);
       }
+
+      match /hearts/{heartId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && isValidHeart(request.resource.data);
+      }
+    }
+
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && isValidReport(request.resource.data);
     }
 
     match /{path=**} {

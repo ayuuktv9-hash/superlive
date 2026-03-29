@@ -6,6 +6,8 @@ export interface UserProfile {
   photoURL?: string;
   bio?: string;
   coins: number;
+  followersCount: number;
+  followingCount: number;
   isLive: boolean;
   role?: 'user' | 'admin';
 }
@@ -16,6 +18,7 @@ export interface Stream {
   creatorName: string;
   creatorPhoto?: string;
   title: string;
+  category?: string;
   viewersCount: number;
   createdAt: Timestamp;
   status: 'live' | 'ended';
@@ -45,4 +48,5 @@ export const GIFTS: Gift[] = [
   { id: 'diamond', name: 'Diamante', icon: '💎', price: 100 },
   { id: 'crown', name: 'Corona', icon: '👑', price: 500 },
   { id: 'rocket', name: 'Cohete', icon: '🚀', price: 1000 },
+  { id: 'unicorn', name: 'Unicornio', icon: '🦄', price: 2000 },
 ];

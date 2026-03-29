@@ -10,9 +10,11 @@
         "photoURL": { "type": "string", "description": "URL to the user's profile picture." },
         "bio": { "type": "string", "description": "Short biography of the user." },
         "coins": { "type": "number", "description": "Virtual currency balance." },
+        "followersCount": { "type": "number", "description": "Number of followers." },
+        "followingCount": { "type": "number", "description": "Number of users being followed." },
         "isLive": { "type": "boolean", "description": "Whether the user is currently streaming." }
       },
-      "required": ["uid", "displayName", "coins"]
+      "required": ["uid", "displayName", "coins", "followersCount"]
     },
     "Stream": {
       "title": "Stream",
@@ -45,12 +47,53 @@
         "createdAt": { "type": "string", "format": "date-time", "description": "When the message was sent." }
       },
       "required": ["id", "streamId", "senderId", "type", "createdAt"]
+    },
+    "Follow": {
+      "title": "Follow",
+      "description": "A follow relationship between two users.",
+      "type": "object",
+      "properties": {
+        "followerId": { "type": "string", "description": "UID of the user who is following." },
+        "followingId": { "type": "string", "description": "UID of the user being followed." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the follow occurred." }
+      },
+      "required": ["followerId", "followingId", "createdAt"]
+    },
+    "Heart": {
+      "title": "Heart",
+      "description": "A like/heart sent during a stream.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the user who sent the heart." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the heart was sent." }
+      },
+      "required": ["userId", "createdAt"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "A report filed against a stream.",
+      "type": "object",
+      "properties": {
+        "streamId": { "type": "string", "description": "ID of the stream being reported." },
+        "streamTitle": { "type": "string", "description": "Title of the stream." },
+        "reporterId": { "type": "string", "description": "UID of the user filing the report." },
+        "reporterName": { "type": "string", "description": "Name of the user filing the report." },
+        "creatorId": { "type": "string", "description": "UID of the stream creator." },
+        "creatorName": { "type": "string", "description": "Name of the stream creator." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the report was filed." },
+        "status": { "type": "string", "enum": ["pending", "reviewed"], "description": "Current status of the report." }
+      },
+      "required": ["streamId", "reporterId", "createdAt", "status"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "User",
       "description": "User profile data."
+    },
+    "/follows/{followId}": {
+      "schema": "Follow",
+      "description": "Follow relationships."
     },
     "/streams/{streamId}": {
       "schema": "Stream",
@@ -59,6 +102,14 @@
     "/streams/{streamId}/messages/{messageId}": {
       "schema": "Message",
       "description": "Chat messages for a specific stream."
+    },
+    "/streams/{streamId}/hearts/{heartId}": {
+      "schema": "Heart",
+      "description": "Hearts sent during a specific stream."
+    },
+    "/reports/{reportId}": {
+      "schema": "Report",
+      "description": "Reports filed by users."
     }
   }
 }
